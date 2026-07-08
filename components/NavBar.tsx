@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/transactions", label: "Transactions" },
   { href: "/invoices", label: "Invoices" },
   { href: "/assistant", label: "Assistant" },
+  { href: "/calculator", label: "Calculator" },
   { href: "/settings/shopify", label: "Shopify" },
 ];
 
