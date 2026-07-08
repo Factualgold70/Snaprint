@@ -98,3 +98,52 @@ alter table shopify_settings enable row level security;
 
 create policy "shopify_settings_all_own" on shopify_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create table if not exists filaments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  color text not null default '',
+  material text not null default 'PLA',
+  weight_grams numeric(10, 2) not null check (weight_grams > 0),
+  cost_zar numeric(12, 2) not null check (cost_zar > 0),
+  cost_rmb numeric(12, 2),
+  rmb_to_zar_rate numeric(10, 4),
+  used_grams numeric(10, 2) not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists filaments_user_idx on filaments (user_id);
+
+alter table filaments enable row level security;
+
+create policy "filaments_select_own" on filaments
+  for select using (auth.uid() = user_id);
+create policy "filaments_insert_own" on filaments
+  for insert with check (auth.uid() = user_id);
+create policy "filaments_update_own" on filaments
+  for update using (auth.uid() = user_id);
+create policy "filaments_delete_own" on filaments
+  for delete using (auth.uid() = user_id);
+
+create table if not exists filament_usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  filament_id uuid not null references filaments (id) on delete cascade,
+  grams_used numeric(10, 2) not null check (grams_used > 0),
+  print_description text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists filament_usage_user_idx on filament_usage (user_id);
+create index if not exists filament_usage_filament_idx on filament_usage (filament_id);
+
+alter table filament_usage enable row level security;
+
+create policy "filament_usage_select_own" on filament_usage
+  for select using (auth.uid() = user_id);
+create policy "filament_usage_insert_own" on filament_usage
+  for insert with check (auth.uid() = user_id);
+create policy "filament_usage_delete_own" on filament_usage
+  for delete using (auth.uid() = user_id);
