@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SnapPrint
 
-## Getting Started
+Income/expense tracking, invoicing, Shopify sync, and Excel export for a 3D printing business. Built with Next.js 16 + Supabase, deployable to Vercel for phone + laptop access.
 
-First, run the development server:
+## 1. Create a Supabase project (~3 min)
+
+1. Go to [supabase.com](https://supabase.com), sign up (free), and create a new project.
+2. Wait for it to finish provisioning, then open **SQL Editor** and paste the contents of [`supabase/schema.sql`](supabase/schema.sql). Run it — this creates the `transactions`, `invoices`, `invoice_items`, and `shopify_settings` tables with row-level security so your data is private to your account.
+3. Go to **Project Settings → API**. You'll need three values for the next step:
+   - **Project URL**
+   - **anon / public key**
+   - **service_role key** (click "Reveal") — keep this secret, never share it or put it in client-side code.
+4. Go to **Authentication → Sign In / Providers** and make sure **Email** is enabled (it is by default). Optionally turn off "Confirm email" under Authentication → Settings if you want to log in immediately after signup without checking your inbox.
+
+## 2. Configure environment variables
+
+Copy `.env.local.example` to `.env.local` and fill in the three Supabase values above, plus a `CRON_SECRET` (any random string — used to authenticate the scheduled Shopify sync and monthly export jobs).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 3. Run locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open http://localhost:3000, sign up, and you're in.
 
-## Learn More
+## 4. Connect Shopify (optional, in-app)
 
-To learn more about Next.js, take a look at the following resources:
+Once logged in, go to **Shopify** in the nav bar — the page walks you through creating a custom app in your Shopify admin and pasting in the access token. Click "Sync now" any time, or let the daily cron job (see below) handle it automatically once deployed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 5. Deploy to Vercel (so it's usable on your phone)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push this project to a GitHub repository.
+2. Go to [vercel.com/new](https://vercel.com/new), import the repo.
+3. Add the same environment variables from `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`) in the Vercel project's **Settings → Environment Variables**.
+4. Deploy. Vercel will automatically pick up `vercel.json`, which schedules:
+   - Daily Shopify order sync (8am UTC)
+   - Monthly export pre-generation on the 1st (9am UTC), stored in Supabase Storage
+5. Open the deployed URL on your phone and tap "Add to Home Screen" (Safari: Share → Add to Home Screen; Android Chrome: menu → Install app) for an app-like icon, thanks to the built-in PWA manifest.
 
-## Deploy on Vercel
+## What's included
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Dashboard** — this month's income/expenses/net, a 6-month trend chart, recent activity, and a motivation banner with a concrete, data-derived tip whenever the month is running negative.
+- **Transactions** — manual income/expense entries with filtering by month and type.
+- **Invoices** — line-item invoices with tax, PDF download, and "mark as paid" which automatically logs the income.
+- **Shopify sync** — pulls paid orders in as income transactions, deduplicated, with a manual "Sync now" and a daily cron.
+- **Excel export** — a button on the dashboard exports any month (Summary / Income / Expenses / Invoices sheets).
+- **Assistant** — ask about profit, biggest expense, unpaid invoices, top income category, or your last sale; answers are computed directly from your data (no external AI cost). `lib/assistant.ts` and `lib/actions/assistant.ts` are the two files to touch if you later want to swap in a real LLM.
