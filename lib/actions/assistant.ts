@@ -3,10 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getLastIncomeDate, getMonthSummary } from "@/lib/data/dashboard";
 import { matchIntent } from "@/lib/assistant";
-
-function formatMoney(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "ZAR" });
-}
+import { formatMoney } from "@/lib/format";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);

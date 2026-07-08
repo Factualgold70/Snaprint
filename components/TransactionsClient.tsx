@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Transaction, TransactionType } from "@/lib/supabase/types";
 import { DEFAULT_CATEGORIES } from "@/lib/data/transactions";
+import { formatMoney } from "@/lib/format";
 import {
   createTransaction,
   deleteTransaction,
@@ -22,10 +23,6 @@ function emptyForm(type: TransactionType = "expense") {
     description: "",
     occurred_on: todayISO(),
   };
-}
-
-function formatMoney(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "ZAR" });
 }
 
 export default function TransactionsClient({

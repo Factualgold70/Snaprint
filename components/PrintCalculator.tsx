@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { formatMoney } from "@/lib/format";
 
 export default function PrintCalculator() {
   const [weight, setWeight] = useState("");
@@ -30,10 +31,6 @@ export default function PrintCalculator() {
       total,
     };
   }, [weight, costPerKg, printTime, laborRate, markup]);
-
-  const formatMoney = (n: number) => {
-    return n.toLocaleString(undefined, { style: "currency", currency: "ZAR" });
-  };
 
   const reset = () => {
     setWeight("");

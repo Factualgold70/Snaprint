@@ -11,9 +11,12 @@ import {
   YAxis,
 } from "recharts";
 import type { TrendPoint } from "@/lib/data/dashboard";
+import { formatMoney } from "@/lib/format";
 
-function formatMoney(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "ZAR", maximumFractionDigits: 0 });
+function formatMoneyNoDecimals(n: number) {
+  const formatted = formatMoney(n);
+  const parts = formatted.split(",");
+  return parts[0];
 }
 
 export default function DashboardChart({ data }: { data: TrendPoint[] }) {

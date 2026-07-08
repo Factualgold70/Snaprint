@@ -2,15 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLastIncomeDate, getMonthSummary, getTrend } from "@/lib/data/dashboard";
 import { buildTip } from "@/lib/motivation";
+import { formatMoney } from "@/lib/format";
 import StatTile from "@/components/StatTile";
 import DashboardChart from "@/components/DashboardChart";
 import MotivationBanner from "@/components/MotivationBanner";
 import ExportButton from "@/components/ExportButton";
 import AssistantPanel from "@/components/AssistantPanel";
-
-function formatMoney(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "ZAR" });
-}
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
