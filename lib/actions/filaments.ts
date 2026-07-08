@@ -131,7 +131,9 @@ export async function recordFilamentUsage(
 
 export async function addFilamentStock(
   filamentId: string,
-  grams_to_add: number
+  grams_to_add: number,
+  cost: number,
+  description: string
 ) {
   const supabase = await createClient();
   const {
@@ -142,7 +144,7 @@ export async function addFilamentStock(
   // Get current filament
   const { data: filament, error: fetchError } = await supabase
     .from("filaments")
-    .select("weight_grams, used_grams")
+    .select("weight_grams, used_grams, name")
     .eq("id", filamentId)
     .eq("user_id", user.id)
     .single();
@@ -160,6 +162,25 @@ export async function addFilamentStock(
     .eq("user_id", user.id);
 
   if (updateError) throw updateError;
+
+  // Create expense transaction
+  if (cost > 0) {
+    const { error: transactionError } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        type: "expense",
+        amount: cost,
+        category: "Filament",
+        description: description || `Stock added to ${filament.name}`,
+        occurred_on: new Date().toISOString().split("T")[0],
+        source: "manual",
+      });
+
+    if (transactionError) throw transactionError;
+  }
+
   revalidatePath("/inventory");
   revalidatePath("/calculator");
+  revalidatePath("/transactions");
 }

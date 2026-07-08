@@ -20,6 +20,8 @@ export default function InventoryClient({
   const [editing, setEditing] = useState<string | null>(null);
   const [addingStock, setAddingStock] = useState<string | null>(null);
   const [stockAmount, setStockAmount] = useState("");
+  const [stockCost, setStockCost] = useState("");
+  const [stockDescription, setStockDescription] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const [formData, setFormData] = useState({
@@ -136,11 +138,24 @@ export default function InventoryClient({
       return;
     }
 
+    if (!stockCost || parseFloat(stockCost) < 0) {
+      alert("Please enter a valid cost");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        await addFilamentStock(filamentId, parseFloat(stockAmount));
+        await addFilamentStock(
+          filamentId,
+          parseFloat(stockAmount),
+          parseFloat(stockCost),
+          stockDescription
+        );
         setAddingStock(null);
         setStockAmount("");
+        setStockCost("");
+        setStockDescription("");
+        alert("Stock added and expense recorded!");
         window.location.reload();
       } catch (error) {
         alert("Error adding stock: " + (error as Error).message);
@@ -377,9 +392,10 @@ export default function InventoryClient({
             <p className="text-sm text-[#898781]">
               Current total: {filaments.find((f) => f.id === addingStock)?.weight_grams}g
             </p>
+
             <div>
               <label className="block text-sm text-[#898781] mb-2">
-                Amount to add (grams)
+                Amount to add (grams) *
               </label>
               <input
                 type="number"
@@ -390,21 +406,56 @@ export default function InventoryClient({
                 autoFocus
               />
             </div>
-            <p className="text-sm text-[#898781]">
-              New total: {(filaments.find((f) => f.id === addingStock)?.weight_grams || 0) + (parseFloat(stockAmount) || 0)}g
-            </p>
+
+            <div>
+              <label className="block text-sm text-[#898781] mb-2">
+                Cost (R) *
+              </label>
+              <input
+                type="number"
+                value={stockCost}
+                onChange={(e) => setStockCost(e.target.value)}
+                placeholder="90"
+                step="0.01"
+                className="w-full px-3 py-2 bg-[#0d0d0d] border border-[#404040] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#2a78d6]"
+              />
+              <p className="text-xs text-[#898781] mt-1">
+                Cost per gram: {stockCost && stockAmount ? formatMoney(parseFloat(stockCost) / parseFloat(stockAmount)) : "—"}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm text-[#898781] mb-2">
+                Description (optional)
+              </label>
+              <input
+                type="text"
+                value={stockDescription}
+                onChange={(e) => setStockDescription(e.target.value)}
+                placeholder="e.g., Order from supplier X"
+                className="w-full px-3 py-2 bg-[#0d0d0d] border border-[#404040] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#2a78d6]"
+              />
+            </div>
+
+            <div className="bg-[#0d0d0d] rounded-lg p-3 space-y-1">
+              <p className="text-xs text-[#898781]">New total: {(filaments.find((f) => f.id === addingStock)?.weight_grams || 0) + (parseFloat(stockAmount) || 0)}g</p>
+              <p className="text-xs text-[#898781]">Will record as expense: {stockCost ? formatMoney(parseFloat(stockCost)) : "R0.00"}</p>
+            </div>
+
             <div className="flex gap-2 pt-4">
               <button
                 onClick={() => handleAddStock(addingStock)}
                 disabled={isPending}
                 className="flex-1 px-4 py-2 bg-[#22c55e] text-white rounded-lg hover:bg-[#16a34a] disabled:opacity-50 transition-colors font-semibold"
               >
-                {isPending ? "Adding..." : "Add Stock"}
+                {isPending ? "Adding..." : "Add Stock & Record"}
               </button>
               <button
                 onClick={() => {
                   setAddingStock(null);
                   setStockAmount("");
+                  setStockCost("");
+                  setStockDescription("");
                 }}
                 className="flex-1 px-4 py-2 bg-[#404040] text-white rounded-lg hover:bg-[#505050] transition-colors"
               >
