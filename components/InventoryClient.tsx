@@ -6,6 +6,7 @@ import {
   createFilament,
   updateFilament,
   deleteFilament,
+  addFilamentStock,
 } from "@/lib/actions/filaments";
 import { DEFAULT_RMB_ZAR_RATE, rmbToZar } from "@/lib/currency";
 import { formatMoney } from "@/lib/format";
@@ -17,6 +18,8 @@ export default function InventoryClient({
 }) {
   const [filaments, setFilaments] = useState(initialFilaments);
   const [editing, setEditing] = useState<string | null>(null);
+  const [addingStock, setAddingStock] = useState<string | null>(null);
+  const [stockAmount, setStockAmount] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const [formData, setFormData] = useState({
@@ -125,6 +128,24 @@ export default function InventoryClient({
         }
       });
     }
+  };
+
+  const handleAddStock = async (filamentId: string) => {
+    if (!stockAmount || parseFloat(stockAmount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await addFilamentStock(filamentId, parseFloat(stockAmount));
+        setAddingStock(null);
+        setStockAmount("");
+        window.location.reload();
+      } catch (error) {
+        alert("Error adding stock: " + (error as Error).message);
+      }
+    });
   };
 
   const remainingGrams = (filament: Filament) => filament.weight_grams - filament.used_grams;
@@ -301,6 +322,12 @@ export default function InventoryClient({
                       Edit
                     </button>
                     <button
+                      onClick={() => setAddingStock(filament.id)}
+                      className="px-3 py-1 text-sm bg-[#22c55e] text-white rounded hover:bg-[#16a34a] transition-colors"
+                    >
+                      Add Stock
+                    </button>
+                    <button
                       onClick={() => handleDelete(filament.id)}
                       disabled={isPending}
                       className="px-3 py-1 text-sm bg-[#d93b3b] text-white rounded hover:bg-[#a82828] disabled:opacity-50 transition-colors"
@@ -339,6 +366,54 @@ export default function InventoryClient({
           </div>
         )}
       </div>
+
+      {/* Add Stock Modal */}
+      {addingStock && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-[#404040] rounded-lg p-6 max-w-md w-full space-y-4">
+            <h3 className="text-xl font-semibold text-white">
+              Add Stock - {filaments.find((f) => f.id === addingStock)?.name}
+            </h3>
+            <p className="text-sm text-[#898781]">
+              Current total: {filaments.find((f) => f.id === addingStock)?.weight_grams}g
+            </p>
+            <div>
+              <label className="block text-sm text-[#898781] mb-2">
+                Amount to add (grams)
+              </label>
+              <input
+                type="number"
+                value={stockAmount}
+                onChange={(e) => setStockAmount(e.target.value)}
+                placeholder="1000"
+                className="w-full px-3 py-2 bg-[#0d0d0d] border border-[#404040] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#2a78d6]"
+                autoFocus
+              />
+            </div>
+            <p className="text-sm text-[#898781]">
+              New total: {(filaments.find((f) => f.id === addingStock)?.weight_grams || 0) + (parseFloat(stockAmount) || 0)}g
+            </p>
+            <div className="flex gap-2 pt-4">
+              <button
+                onClick={() => handleAddStock(addingStock)}
+                disabled={isPending}
+                className="flex-1 px-4 py-2 bg-[#22c55e] text-white rounded-lg hover:bg-[#16a34a] disabled:opacity-50 transition-colors font-semibold"
+              >
+                {isPending ? "Adding..." : "Add Stock"}
+              </button>
+              <button
+                onClick={() => {
+                  setAddingStock(null);
+                  setStockAmount("");
+                }}
+                className="flex-1 px-4 py-2 bg-[#404040] text-white rounded-lg hover:bg-[#505050] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

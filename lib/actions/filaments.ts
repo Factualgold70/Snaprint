@@ -128,3 +128,38 @@ export async function recordFilamentUsage(
   revalidatePath("/inventory");
   revalidatePath("/calculator");
 }
+
+export async function addFilamentStock(
+  filamentId: string,
+  grams_to_add: number
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Get current filament
+  const { data: filament, error: fetchError } = await supabase
+    .from("filaments")
+    .select("weight_grams, used_grams")
+    .eq("id", filamentId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // Add to weight_grams
+  const { error: updateError } = await supabase
+    .from("filaments")
+    .update({
+      weight_grams: (filament.weight_grams || 0) + grams_to_add,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", filamentId)
+    .eq("user_id", user.id);
+
+  if (updateError) throw updateError;
+  revalidatePath("/inventory");
+  revalidatePath("/calculator");
+}
